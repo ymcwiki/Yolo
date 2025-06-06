@@ -6,3 +6,4 @@ pillow>=8.0.0
 cx_Freeze>=6.10
 setuptools>=42.0.0
 lap>=0.5.12
+typer>=0.9.0
