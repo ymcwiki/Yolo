@@ -1,4 +1,4 @@
-from yolo_app.ui import main
+from .ui import main
 
 if __name__ == "__main__":
     main()
