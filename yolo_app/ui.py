@@ -76,12 +76,9 @@ class DetectionApp:
         
         self.main_frame = ttk.Frame(self.root, padding=10)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        self.create_control_panel()
-        self.create_display_panel()
-        self.create_log_panel()
-        self.create_video_controls()
-        
+
+        self.create_notebook()
+
         self.redirect_stdout()
         
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -145,11 +142,28 @@ class DetectionApp:
         self.style.configure("Subtitle.TLabel", font=("微软雅黑", 10))
         
         self.style.configure("Panel.TFrame", relief=tk.RIDGE, borderwidth=2)
+
+    def create_notebook(self):
+        self.notebook = ttk.Notebook(self.main_frame)
+        self.page_model = ttk.Frame(self.notebook)
+        self.page_detect = ttk.Frame(self.notebook)
+        self.page_log = ttk.Frame(self.notebook)
+
+        self.notebook.add(self.page_model, text="步骤1: 模型设置")
+        self.notebook.add(self.page_detect, text="步骤2: 检测")
+        self.notebook.add(self.page_log, text="步骤3: 日志")
+        self.notebook.pack(fill=tk.BOTH, expand=True)
+
+        self.create_model_panel(self.page_model)
+        self.create_detection_panel(self.page_detect)
+        self.create_display_panel(self.page_detect)
+        self.create_video_controls(self.page_detect)
+        self.create_log_panel(self.page_log)
     
-    def create_control_panel(self):
-        control_frame = ttk.Frame(self.main_frame, style="Panel.TFrame", padding=5)
-        control_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        
+    def create_model_panel(self, parent):
+        control_frame = ttk.Frame(parent, style="Panel.TFrame", padding=5)
+        control_frame.pack(fill=tk.BOTH, expand=True)
+
         model_frame = ttk.LabelFrame(control_frame, text="模型设置", padding=5)
         model_frame.pack(fill=tk.X, pady=(0, 10))
         
@@ -191,46 +205,52 @@ class DetectionApp:
         self.batch_label = ttk.Label(model_frame, text="1")
         self.batch_label.grid(row=3, column=2, padx=(5, 0))
         
-        ttk.Button(model_frame, text="加载模型", style="Primary.TButton", 
+        ttk.Button(model_frame, text="加载模型", style="Primary.TButton",
                  command=self.load_model).grid(row=4, column=0, columnspan=3, sticky=tk.EW, pady=5)
-        
-        operation_frame = ttk.LabelFrame(control_frame, text="操作", padding=5)
-        operation_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        ttk.Button(operation_frame, text="从图像中检测", 
+
+        self.model_panel = control_frame
+
+    def create_detection_panel(self, parent):
+        control_frame = ttk.Frame(parent, style="Panel.TFrame", padding=5)
+        control_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+
+        self.operation_frame = ttk.LabelFrame(control_frame, text="操作", padding=5)
+        self.operation_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Button(self.operation_frame, text="从图像中检测",
                  command=self.detect_from_image).pack(fill=tk.X, pady=2)
-        
-        ttk.Button(operation_frame, text="从视频中检测", 
+
+        ttk.Button(self.operation_frame, text="从视频中检测",
                  command=self.detect_from_video).pack(fill=tk.X, pady=2)
-        
-        ttk.Button(operation_frame, text="从摄像头检测", 
+
+        ttk.Button(self.operation_frame, text="从摄像头检测",
                  command=self.detect_from_camera).pack(fill=tk.X, pady=2)
-        
-        ttk.Button(operation_frame, text="批量处理图像", 
+
+        ttk.Button(self.operation_frame, text="批量处理图像",
                  command=self.batch_process_images).pack(fill=tk.X, pady=2)
-        
-        self.stop_button = ttk.Button(operation_frame, text="停止处理", 
+
+        self.stop_button = ttk.Button(self.operation_frame, text="停止处理",
                                     command=self.stop_processing, state=tk.DISABLED)
         self.stop_button.pack(fill=tk.X, pady=2)
-        
-        self.save_result_button = ttk.Button(operation_frame, text="保存当前结果", 
+
+        self.save_result_button = ttk.Button(self.operation_frame, text="保存当前结果",
                                           command=self.save_results, state=tk.DISABLED)
         self.save_result_button.pack(fill=tk.X, pady=2)
-        
-        ttk.Button(operation_frame, text="导出日志", 
+
+        ttk.Button(self.operation_frame, text="导出日志",
                  command=self.export_log).pack(fill=tk.X, pady=2)
-        
+
         result_frame = ttk.LabelFrame(control_frame, text="检测结果", padding=5)
         result_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         self.result_text = ScrolledText(result_frame, width=30, height=10, wrap=tk.WORD)
         self.result_text.pack(fill=tk.BOTH, expand=True)
         self.result_text.config(state=tk.DISABLED)
-        
+
         ttk.Button(result_frame, text="导出结果详情", command=self.export_result_details).pack(fill=tk.X, pady=2)
 
-    def create_display_panel(self):
-        display_frame = ttk.Frame(self.main_frame, style="Panel.TFrame", padding=5)
+    def create_display_panel(self, parent):
+        display_frame = ttk.Frame(parent, style="Panel.TFrame", padding=5)
         display_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
         self.canvas = tk.Canvas(display_frame, bg="black")
@@ -245,9 +265,9 @@ class DetectionApp:
         self.time_info_label = ttk.Label(status_frame, text="")
         self.time_info_label.pack(side=tk.RIGHT)
     
-    def create_log_panel(self):
-        log_frame = ttk.LabelFrame(self.main_frame, text="日志", padding=5)
-        log_frame.pack(fill=tk.X, pady=(10, 0))
+    def create_log_panel(self, parent):
+        log_frame = ttk.LabelFrame(parent, text="日志", padding=5)
+        log_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
         
         log_control_frame = ttk.Frame(log_frame)
         log_control_frame.pack(fill=tk.X, pady=(0, 5))
@@ -262,8 +282,8 @@ class DetectionApp:
         self.log_text.pack(fill=tk.BOTH, expand=True)
         self.log_text.config(state=tk.DISABLED)
     
-    def create_video_controls(self):
-        self.video_controls_frame = ttk.LabelFrame(self.main_frame, text="视频控制", padding=5)
+    def create_video_controls(self, parent):
+        self.video_controls_frame = ttk.LabelFrame(parent, text="视频控制", padding=5)
         
         controls_inner_frame = ttk.Frame(self.video_controls_frame)
         controls_inner_frame.pack(fill=tk.X)
@@ -292,7 +312,7 @@ class DetectionApp:
     
     def toggle_video_controls(self, show=False):
         if show:
-            self.video_controls_frame.pack(fill=tk.X, pady=(10, 0), before=self.log_text.master)
+            self.video_controls_frame.pack(fill=tk.X, pady=(10, 0))
             self.pause_button.config(state=tk.NORMAL)
             self.frame_progress.state(['!disabled'])
         else:
@@ -1283,22 +1303,16 @@ class DetectionApp:
         self.canvas.create_image(x, y, anchor=tk.NW, image=self.photo_image)
     
     def disable_operation_buttons(self):
-        for widget in self.main_frame.winfo_children():
-            if isinstance(widget, ttk.Frame):
-                for child in widget.winfo_children():
-                    if isinstance(child, ttk.LabelFrame) and child.cget("text") == "操作":
-                        for button in child.winfo_children():
-                            if button != self.stop_button:
-                                button.config(state=tk.DISABLED)
+        if hasattr(self, 'operation_frame'):
+            for button in self.operation_frame.winfo_children():
+                if button != self.stop_button:
+                    button.config(state=tk.DISABLED)
     
     def enable_operation_buttons(self):
-        for widget in self.main_frame.winfo_children():
-            if isinstance(widget, ttk.Frame):
-                for child in widget.winfo_children():
-                    if isinstance(child, ttk.LabelFrame) and child.cget("text") == "操作":
-                        for button in child.winfo_children():
-                            if button != self.stop_button:
-                                button.config(state=tk.NORMAL)
+        if hasattr(self, 'operation_frame'):
+            for button in self.operation_frame.winfo_children():
+                if button != self.stop_button:
+                    button.config(state=tk.NORMAL)
                                 
         if self.detection_results:
             self.save_result_button.config(state=tk.NORMAL)
